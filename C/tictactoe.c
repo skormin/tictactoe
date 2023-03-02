@@ -59,6 +59,11 @@ int main()
             scanf("%s", order);
         }
     }
+    
+    while(CheckFreeSpace>0)
+    {
+        
+    }
 
      
     return 0;
