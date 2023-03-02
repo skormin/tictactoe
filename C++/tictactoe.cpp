@@ -1,4 +1,4 @@
-#include <iostream>
+#include <stdio.h>
 #include <stdbool.h>
 void print_board(char board[][3]);
 
@@ -17,16 +17,15 @@ int main()
     board[2][2] = '9';
     // Print the board
     print_board(board);
-    std::cout << "Hello, Welcome to Tic Tac Toe" << std::endl;
+    printf("Hello, Welcome to Tic Tac Toe \n");
     // Ask the user if they want to go first or second
     // Return an error if they provide an unexpected answer
     char order[8];
     bool expectedinput = false;
     char computer;
     char opponent;
-    std::cout << "Would you like to be X or O?: ";
-    std::cin >> order;
-    std::cout << std::endl;
+    printf("Would you like to be X or O?: ");
+    scanf("%s", order);
     while (expectedinput == false)
     {
         if (order == "X" || order == "x")
@@ -45,9 +44,8 @@ int main()
         }
         else
         {
-            std::cout << "Would you like to be X or O?: ";
-            std::cin >> order;
-            std::cout << std::endl;
+            printf("Please enter X or O: ");
+            scanf("%s", order);
         }
     }
     /*
@@ -75,8 +73,8 @@ void print_board(char board[][3])
     int r = 0, c = 0;
     for (r = 0; r <=2; r++)
     {
-        for (c = 0;c <=2; c++) std::cout << " " << board[r][c] << " ";
-        std::cout << std::endl;
+        for (c = 0;c <=2; c++) printf(" %c ", board[r][c]);
+        printf("\n");
     }
 }
 
