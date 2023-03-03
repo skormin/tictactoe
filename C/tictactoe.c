@@ -4,7 +4,7 @@ typedef struct move
 {
     int row;
     int column;
-};
+}move;
 
 void PrintBoard(char board[3][3]);
 struct move FindBestMove(char computer, char opponent, char board[3][3]);
@@ -31,24 +31,26 @@ int main()
     printf("Hello, Welcome to Tic Tac Toe \n");
     // Ask the user if they want to go first or second
     // Return an error if they provide an unexpected answer
-    char order[8];
-    bool expectedinput = false;
-    char computer;
-    char opponent;
-    printf("Would you like to be X or O?: ");
-    scanf("%s", order);
-    while (expectedinput == false)
+    char order='-';
+    bool ExpectedInput = false, SpaceAvailable = false;
+    char computer = '-';
+    char opponent = '-';
+    int RowInput = -1, ColumnInput = -1;
+    printf("Would you like to be X or O? (enter X or O):  ");
+    scanf("%c", &order);
+ 
+    while (ExpectedInput == false)
     {
-        if (order == "X" || order == "x")
+        if (order == 'X' || order == 'x')
         {
-            expectedinput = true;
+            ExpectedInput = true;
             computer = 'O';
             opponent = 'X';
             break;
         }
-        if (order == "O" || order == "o")
+        if (order == 'O' || order == 'o')
         {
-            expectedinput = true;
+            ExpectedInput = true;
             computer = 'X';
             opponent = 'O';
             break;
@@ -56,13 +58,79 @@ int main()
         else
         {
             printf("Please enter X or O: ");
-            scanf("%s", order);
+            scanf("%c", &order);
         }
     }
     
     while(CheckFreeSpace>0)
     {
         
+        SpaceAvailable=false;
+        PrintBoard(board);
+        while(SpaceAvailable==false)
+        {
+            ExpectedInput = false;
+            while(ExpectedInput == false)
+            {
+                printf("Enter the Row of your move (1-3):  ");
+                scanf("%d", &RowInput);
+                printf("\n");
+                RowInput--;
+                if (RowInput==0 || RowInput==1 || RowInput==2)
+                {             
+                    ExpectedInput = true;
+                }
+            }
+            ExpectedInput = false;
+            while(ExpectedInput == false)
+            {
+                printf("Enter the column of your move (1-3):  ");
+                scanf("%d", &ColumnInput);
+                printf("\n");
+                ColumnInput--;
+                if (ColumnInput==0 || ColumnInput==1 || ColumnInput==2)
+                {
+                    ExpectedInput = true;
+                } 
+            }
+            if(board[RowInput][ColumnInput]=='-')
+            {
+                SpaceAvailable = true;
+            }
+            else
+            {
+                printf("That spot is taken. \n");
+            }
+        }
+        board[RowInput][ColumnInput] = opponent;
+        if(CheckEnd(board)==opponent)
+        {
+            PrintBoard(board);
+            printf("You have one the Game!!");
+            break;
+        }
+        if(CheckFreeSpace(board)==0)
+        {
+            PrintBoard(board);
+            printf("There are no more free spaces, the game is over.");
+            break;
+        }
+        
+        struct move BestMove = FindBestMove(computer, opponent, board);
+
+        board[BestMove.row][BestMove.column] = computer;
+        if(CheckEnd(board)==computer)
+        {
+            PrintBoard(board);
+            printf("The Computer has won the Game :(");
+            break;
+        }
+        if(CheckFreeSpace(board)==0)
+        {
+            PrintBoard(board);
+            printf("There are no more free spaces, the game is over.");
+            break;
+        }
     }
 
      
@@ -105,8 +173,8 @@ int MiniMax(char computer, char opponent, char board[3][3], int depth, bool IsMa
     
     // if the board is filled return the value of the board
     int score = ScoreGame(computer, opponent, board);
-    if(score == 10) return score;
-    if(score == -10) return score;
+    if(score == 10) return score-depth;
+    if(score == -10) return score+depth;
     if(CheckFreeSpace(board) == 0) return 0;
     // if the player is the maximizing player find the board state with the largest value and return that value
     if(IsMaximizer)
@@ -140,7 +208,7 @@ int MiniMax(char computer, char opponent, char board[3][3], int depth, bool IsMa
                 {
                     board[r][c] = opponent;
 
-                    BestValue = max(BestValue, MiniMax(computer, opponent, board, depth+1, !IsMaximizer));
+                    BestValue = min(BestValue, MiniMax(computer, opponent, board, depth+1, !IsMaximizer));
 
                     board[r][c] = '-';
                 }

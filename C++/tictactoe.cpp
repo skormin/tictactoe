@@ -1,86 +1,249 @@
-#include <iostream>
+#include <stdio.h>
 #include <stdbool.h>
-void print_board(char board[][3]);
+typedef struct move
+{
+    int row;
+    int column;
+}move;
+
+void PrintBoard(char board[3][3]);
+struct move FindBestMove(char computer, char opponent, char board[3][3]);
+int MiniMax(char computer, char opponent, char board[3][3], int depth, bool IsMaximizer);
+int ScoreGame(char computer, char opponent, char board[3][3]);
+void PrintBoard(char board[3][3]);
+char CheckEnd(char board[3][3]);
+int CheckFreeSpace(char board[3][3]);
+int max(int FirstValue, int SecondValue);
+int min(int FirstValue, int SecondValue);
 
 int main()
 {
     // Create a board and number it 
-    char board[3][3];
-    board[0][0] = '1';
-    board[0][1] = '2';
-    board[0][2] = '3';
-    board[1][0] = '4';
-    board[1][1] = '5';
-    board[1][2] = '6';
-    board[2][0] = '7';
-    board[2][1] = '8';
-    board[2][2] = '9';
+
+    char board[3][3] = {{'-', '-', '-'},
+                        {'-', '-', '-'},
+                        {'-', '-', '-'}};
+    
+ 
+   
     // Print the board
-    print_board(board);
-    std::cout << "Hello, Welcome to Tic Tac Toe" << std::endl;
+    PrintBoard(board);
+    printf("Hello, Welcome to Tic Tac Toe \n");
     // Ask the user if they want to go first or second
     // Return an error if they provide an unexpected answer
-    char order[8];
-    bool expectedinput = false;
-    char computer;
-    char opponent;
-    std::cout << "Would you like to be X or O?: ";
-    std::cin >> order;
-    std::cout << std::endl;
-    while (expectedinput == false)
+    char order='-';
+    bool ExpectedInput = false, SpaceAvailable = false;
+    char computer = '-';
+    char opponent = '-';
+    int RowInput = -1, ColumnInput = -1;
+    printf("Would you like to be X or O? (enter X or O):  ");
+    scanf("%c", &order);
+ 
+    while (ExpectedInput == false)
     {
-        if (order == "X" || order == "x")
+        if (order == 'X' || order == 'x')
         {
-            expectedinput = true;
+            ExpectedInput = true;
             computer = 'O';
             opponent = 'X';
             break;
         }
-        if (order == "O" || order == "o")
+        if (order == 'O' || order == 'o')
         {
-            expectedinput = true;
+            ExpectedInput = true;
             computer = 'X';
             opponent = 'O';
             break;
         }
         else
         {
-            std::cout << "Would you like to be X or O?: ";
-            std::cin >> order;
-            std::cout << std::endl;
+            printf("Please enter X or O: ");
+            scanf("%c", &order);
         }
     }
-    /*
-    Computer shall make moves in order of priority:
-    1. Win: If the player has two in a row, they can place a third to get three in a row.
-    2. Block: If the opponent has two in a row, the player must play the third themselves to block the opponent. 
-       Note: Block algorithm is the same as the win algorithm just for the opponent
-    3. Fork: Create an opportunity where the player has two ways to win (two non-blocked lines of 2).
-    4. Blocking an opponent's fork: If there is only one possible fork for the opponent, the player should block it. 
-       Otherwise, the player should block all forks in any way that simultaneously allows them to create two in a row. 
-       Otherwise, the player should create a two in a row to force the opponent into defending, as long as it doesn't result in them creating a fork. 
-       For example, if "X" has two opposite corners and "O" has the center, "O" must not play a corner move in order to win. 
-       (Playing a corner move in this scenario creates a fork for "X" to win.)
-    5. Center: A player marks the center.
-    6. Opposite corner: If the opponent is in the corner, the player plays the opposite corner.
-    7. Empty corner: The player plays in a corner square.
-    8. Empty side: The player plays in a middle square on any of the 4 sides.
-    */
+    
+    while(CheckFreeSpace>0)
+    {
+        
+        SpaceAvailable=false;
+        PrintBoard(board);
+        while(SpaceAvailable==false)
+        {
+            ExpectedInput = false;
+            while(ExpectedInput == false)
+            {
+                printf("Enter the Row of your move (1-3):  ");
+                scanf("%d", &RowInput);
+                printf("\n");
+                RowInput--;
+                if (RowInput==0 || RowInput==1 || RowInput==2)
+                {             
+                    ExpectedInput = true;
+                }
+            }
+            ExpectedInput = false;
+            while(ExpectedInput == false)
+            {
+                printf("Enter the column of your move (1-3):  ");
+                scanf("%d", &ColumnInput);
+                printf("\n");
+                ColumnInput--;
+                if (ColumnInput==0 || ColumnInput==1 || ColumnInput==2)
+                {
+                    ExpectedInput = true;
+                } 
+            }
+            if(board[RowInput][ColumnInput]=='-')
+            {
+                SpaceAvailable = true;
+            }
+            else
+            {
+                printf("That spot is taken. \n");
+            }
+        }
+        board[RowInput][ColumnInput] = opponent;
+        if(CheckEnd(board)==opponent)
+        {
+            PrintBoard(board);
+            printf("You have one the Game!!");
+            break;
+        }
+        if(CheckFreeSpace(board)==0)
+        {
+            PrintBoard(board);
+            printf("There are no more free spaces, the game is over.");
+            break;
+        }
+        
+        struct move BestMove = FindBestMove(computer, opponent, board);
+
+        board[BestMove.row][BestMove.column] = computer;
+        if(CheckEnd(board)==computer)
+        {
+            PrintBoard(board);
+            printf("The Computer has won the Game :(");
+            break;
+        }
+        if(CheckFreeSpace(board)==0)
+        {
+            PrintBoard(board);
+            printf("There are no more free spaces, the game is over.");
+            break;
+        }
+    }
+
      
     return 0;
 }
-
-void print_board(char board[][3])
+struct move FindBestMove(char computer, char opponent, char board[3][3])
 {
-    int r = 0, c = 0;
-    for (r = 0; r <=2; r++)
+    int MaxValue = -1000;
+    
+    struct move BestMove;
+    BestMove.row = 3;
+    BestMove.column = 3;
+
+    for(int r=0; r<3; r++)
     {
-        for (c = 0;c <=2; c++) std::cout << " " << board[r][c] << " ";
-        std::cout << std::endl;
+        for(int c=0; c<3; c++)
+        {
+            if(board[r][c]=='-')
+            {
+                board[r][c] = computer;
+
+                int CurrentValue = MiniMax(computer, opponent, board, 0, false);
+
+                board[r][c] = '-';
+
+                if(CurrentValue > MaxValue)
+                {
+                    BestMove.row = r;
+                    BestMove.column = c;
+                    MaxValue = CurrentValue;
+                }
+            }
+        }
+    }
+
+    return BestMove;
+}
+int MiniMax(char computer, char opponent, char board[3][3], int depth, bool IsMaximizer)
+{
+    
+    // if the board is filled return the value of the board
+    int score = ScoreGame(computer, opponent, board);
+    if(score == 10) return score-depth;
+    if(score == -10) return score+depth;
+    if(CheckFreeSpace(board) == 0) return 0;
+    // if the player is the maximizing player find the board state with the largest value and return that value
+    if(IsMaximizer)
+    {
+        int BestValue = -1000;
+        for(int r=0; r<3; r++)
+        {
+            for(int c=0; c<3; c++)
+            {
+                if(board[r][c]=='-')
+                {
+                    board[r][c] = computer;
+
+                    BestValue = max(BestValue, MiniMax(computer, opponent, board, depth+1, !IsMaximizer));
+
+                    board[r][c] = '-';
+                }
+            }
+        }
+        return BestValue;
+    }
+    // if the player is the minimizing player find the board state withe the smallest value and return that value
+    else
+    {
+        int BestValue = 1000;
+        for(int r=0; r<3; r++)
+        {
+            for(int c=0; c<3; c++)
+            {
+                if(board[r][c]=='-')
+                {
+                    board[r][c] = opponent;
+
+                    BestValue = min(BestValue, MiniMax(computer, opponent, board, depth+1, !IsMaximizer));
+
+                    board[r][c] = '-';
+                }
+            }
+        }
+        return BestValue;
+
+    }
+   
+}
+int ScoreGame(char computer, char opponent, char board[3][3])
+{
+    if(CheckEnd(board)==computer)
+    {
+        return 10;
+    }
+    if(CheckEnd(board)==opponent)
+    {
+        return -10;
+    }
+    else
+    {
+        return 0;
     }
 }
 
-char check_end(char board[][3])
+void PrintBoard(char board[3][3])
+{
+    for (int r = 0; r <=2; r++)
+    {
+        for (int c = 0;c <=2; c++) printf(" %c ", board[r][c]);
+        printf("\n");
+    }
+}
+char CheckEnd(char board[3][3])
 {
     int r = 0, c = 0;
     int X_repeat = 0, O_repeat = 0;
@@ -137,7 +300,50 @@ char check_end(char board[][3])
     return 'N';
 
 }
-int *check_win(char board[][3], char player)
+
+int CheckFreeSpace(char board[3][3])
+{
+    int r = 0, c = 0;
+    int FreeSpace = 0;
+    
+    for (r = 0; r<=2; r++)
+    {
+        for (c=0;c<=2;c++)
+        {
+            if (board[r][c] == '-') FreeSpace++;
+        }
+    }
+    return FreeSpace;    
+}
+// Create a function to return the maximum value between two integer values
+int max(int FirstValue, int SecondValue)
+{
+    // if first paramater is greater than the second parameter then return the first parameter, 
+    if(FirstValue > SecondValue)
+    {
+        return FirstValue;
+    }
+    // if the second paramter is greater than the first parameter return the second parameter. if both are equal you can return either but I chose the second to reduce lines of code
+    else
+    {
+        return SecondValue;
+    }
+}
+// create a function to return the minimum value, logic is opposite of the max function
+int min(int FirstValue, int SecondValue)
+{
+    if(FirstValue < SecondValue)
+    {
+        return FirstValue;
+    }
+    else
+    {
+        return SecondValue;
+    }
+}
+
+/* 
+int *CheckWin(GameBoard TicBoard, char player)
 {
     
     int r = 0, c = 0;
@@ -219,7 +425,7 @@ int *check_win(char board[][3], char player)
         c =2;
         for (r = 0; r<=2; r++)
         {
-            if (board[r][c] != player && board[r][r] != opponent)
+            if (TicBoard.board[r][c] != player && TicBoard.board[r][r] != opponent)
             {
                 position[0] = r;
                 position[1] = c;
@@ -233,6 +439,8 @@ int *check_win(char board[][3], char player)
     // if no potentional win is found return impossible position
     return position;
 }
+
+
 int *check_fork(char board[][3], char player)
 {
     int r = 0, c = 0, i = 0, j=0;
@@ -400,18 +608,229 @@ int check_empty_side(char board[][3], char player)
 
 
 }
-
-int check_free_space(char board[][3])
+int MiniMax(char computer, char opponent, GameBoard TicBoard, int depth, bool IsMaximizer)
 {
-    int r = 0, c = 0;
-    int free_space = 0;
     
-    for (r = 0; r<=2; r++)
+    
+    // if the board is filled return the value of the board
+    int score = ScoreGame(computer, opponent, TicBoard);
+    if(score == 10) return score;
+    if(score == -10) return score;
+    if(CheckFreeSpace == 0) return 0;
+    // if the player is the maximizing player find the board state with the largest value and return that value
+    if(IsMaximizer)
     {
-        for (c=0;c<=2;c++)
+        int BestValue = -1000;
+        for(int r=0; r<3; r++)
         {
-            if (board[r][c] != 'X' || board[r][c] != 'O') free_space++;
+            for(int c=0; c<3; c++)
+            {
+                if(TicBoard.board[r][c]=='-')
+                {
+                    TicBoard.board[r][c] = computer;char computer, char opponent, GameBoard TicBoard
+
+                    BestValue = max(BestValue, MiniMax(computer, opponent, TicBoard, depth+1, !IsMaximizer));
+
+                    TicBoard.board[r][c] = '-';
+                }
+            }
+        }
+        return BestValue;
+    }
+    // if the player is the minimizing player find the board state withe the smallest value and return that value
+    else
+    {
+        int BestValue = 1000;
+        for(int r=0; r<3; r++)
+        {
+            for(int c=0; c<3; c++)
+            {
+                if(TicBoard.board[r][c]=='-')
+                {
+                    TicBoard.board[r][c] = opponent;
+
+                    BestValue = max(BestValue, MiniMax(computer, opponent, TicBoard, depth+1, !IsMaximizer));
+
+                    TicBoard.board[r][c] = '-';
+                }
+            }
+        }
+        return BestValue;
+
+    }
+   
+    
+    
+    
+    
+    
+    
+    
+    
+    //int move[2] = {3, 3};
+    
+    // Create a test board which is a copy of the original board to trial and error different moves
+    GameBoard TestBoard;
+    TestBoard = CopyBoard(TicBoard);
+    
+    if(CheckEnd(TicBoard)== 'O' || CheckEnd 'X')
+    {
+        return value;
+    }
+    // Check the number of free spaces
+    int FreeSpace = 0;
+    FreeSpace = CheckFreeSpace(TicBoard);
+
+    // get an array of all possible free moves
+    IntArray AvailableMoves;
+    AvailableMoves = CheckAvailable(TicBoard);
+
+    // Create a computer token and oppenent token to innumerate strongest possible moves
+    int ComputerToken[FreeSpace], OpponentToken[FreeSpace];
+    for(int i=0; i<FreeSpace; i++)
+    {
+        ComputerToken[i]=0;
+        OpponentToken[i]=0;
+    }
+
+    if()
+    // Trial and error all possible moves
+    for(int r=0; r<=FreeSpace; r=r+2)
+    {
+        
+        if(CheckEnd(TestBoard) == computer)
+        {
+            ComputerToken[r] = 10;
+            OpponentToken[r] = 0;
+        }
+        
+
+    }
+
+    
+}
+int *CheckAvailable(GameBoard TicBoard)
+{
+    // Check how many Free spaces there are left on the board and use the number of free spaces to set number of rows of the available moves array
+    int FreeSpace = 0;
+    FreeSpace = CheckFreeSpace(board);
+
+    // Create a 2D array whos were each row of the arraw lists the position of the free space
+    int AvailableMoves[FreeSpace][2];
+    
+    
+    int ArrayRow=0;
+    // Check where the free spaces are and store their location in the 2D array
+    for(int r=0; r<=2; r++)
+    {
+        for(int c=0; c<=2; c++)
+        {   
+            // Logical check for free space meaning any space that does not contain either an x or o
+            if(board[r][c] != 'X' && board[r][c] != 'O')
+            {
+                // fail safe to check that the number of free spaces matches the checkfreespace function return value
+                if(ArrayRow < Freespace)
+                {
+                    AvailableMoves[ArrayRow][0] = r;
+                    AvailableMoves[ArrayRow][1] = c;
+                    ArrayRow++;
+                }
+                else
+                {
+                    return NULL;
+                }
+            }
         }
     }
-    return free_space;    
+    return AvailableMoves;
 }
+struct GameBoard CopyBoard(GameBoard TicBoard)
+{
+    GameBoard TestBoard;
+
+    TestBoard.rows = TicBoard.rows;
+    TestBoard.columns = TicBoard.columns;
+
+    for(int r=0; r<3; r++)
+    {
+        for(int c=0; c<3; c++)
+        {
+            TestBoard.board[r][c] = TicBoard.board[r][c];
+        }
+    }
+
+    return TestBoard;
+}
+int main()
+{
+    // Create a board and number it 
+
+    char board[3][3] = {{'-', '-', '-'},
+                        {'-', '-', '-'},
+                        {'-', '-', '-'}};
+    
+    
+    GameBoard TicBoard;
+    for(int r=0; r<3; r++)
+    {
+        for(int c=0; c<3; c++)
+        {
+            TicBoard.board[r][c] = '-';
+        }
+    }
+    
+   
+    // Print the board
+    PrintBoard(board);
+    printf("Hello, Welcome to Tic Tac Toe \n");
+    // Ask the user if they want to go first or second
+    // Return an error if they provide an unexpected answer
+    char order;
+    bool expectedinput = false;
+    char computer;
+    char opponent;
+    printf("Would you like to be X or O?: ");
+    scanf("%s", order);
+    while (expectedinput == false)
+    {
+        if (order == "X" || order == "x")
+        {
+            expectedinput = true;
+            computer = 'O';
+            opponent = 'X';
+            break;
+        }
+        if (order == "O" || order == "o")
+        {
+            expectedinput = true;
+            computer = 'X';
+            opponent = 'O';
+            break;
+        }
+        else
+        {
+            printf("Please enter X or O: ");
+            scanf("%s", order);
+        }
+    }
+    
+    Computer shall make moves in order of priority:
+    1. Win: If the player has two in a row, they can place a third to get three in a row.
+    2. Block: If the opponent has two in a row, the player must play the third themselves to block the opponent. 
+       Note: Block algorithm is the same as the win algorithm just for the opponent
+    3. Fork: Create an opportunity where the player has two ways to win (two non-blocked lines of 2).
+    4. Blocking an opponent's fork: If there is only one possible fork for the opponent, the player should block it. 
+       Otherwise, the player should block all forks in any way that simultaneously allows them to create two in a row. 
+       Otherwise, the player should create a two in a row to force the opponent into defending, as long as it doesn't result in them creating a fork. 
+       For example, if "X" has two opposite corners and "O" has the center, "O" must not play a corner move in order to win. 
+       (Playing a corner move in this scenario creates a fork for "X" to win.)
+    5. Center: A player marks the center.
+    6. Opposite corner: If the opponent is in the corner, the player plays the opposite corner.
+    7. Empty corner: The player plays in a corner square.
+    8. Empty side: The player plays in a middle square on any of the 4 sides.
+    
+     
+    return 0;
+}
+*/
+
